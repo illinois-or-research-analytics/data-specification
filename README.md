@@ -17,3 +17,13 @@ The specifications in this repository cover:
    - Cluster membership format
 
 For detailed specifications, see [formats.md](formats.md).
+
+## Utility Scripts
+
+The [scripts](scripts/) directory contains utilities for working with the data formats:
+
+- **Delimiter Detection** - Tools to automatically detect delimiters in data files
+  - `get_delimiter.py` (Python implementation)
+  - `get_delimiter.cpp` (C++ implementation)
+
+These utilities help standardize file processing across different programming languages.
