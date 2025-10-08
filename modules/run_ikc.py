@@ -12,7 +12,7 @@ def main(args):
     global quiet
 
     edgelist = args.edgelist
-    output_dir = Path(args.output_directory)
+    output_dir = Path(args.output)
     k = args.kvalue
     quiet = args.quiet
 
@@ -369,7 +369,7 @@ def parseArgs():
 
     parser.add_argument(
         "-o",
-        "--output-directory",
+        "--output",
         type=str,
         help="Path to file containing output",
         required=True,
