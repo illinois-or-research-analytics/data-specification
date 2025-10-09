@@ -16,10 +16,10 @@ def parse_args():
         help="Path to the edgelist file",
     )
     parser.add_argument(
-        "--output-directory",
+        "--output",
         type=str,
         required=True,
-        help="Directory to save the output files",
+        help="Path to the output file",
     )
     args = parser.parse_args()
     return args
@@ -29,7 +29,7 @@ args = parse_args()
 
 args = parse_args()
 edgelist_fn = args.edgelist
-output_dir = Path(args.output_directory)
+output_file = Path(args.output)
 
 
 # delimiter checking
@@ -50,15 +50,13 @@ def get_delimiter(filepath: str) -> str:
 
 # ===========
 
-output_dir.mkdir(parents=True, exist_ok=True)
-
-logging.basicConfig(
-    filename=output_dir / "run.log",
-    filemode="w",
-    level=logging.INFO,
-    format="%(asctime)s - %(levelname)s - %(message)s",
-)
-logging.getLogger().addHandler(logging.StreamHandler(sys.stdout))
+# logging.basicConfig(
+#     filename=output_dir / "run.log",
+#     filemode="w",
+#     level=logging.INFO,
+#     format="%(asctime)s - %(levelname)s - %(message)s",
+# )
+# logging.getLogger().addHandler(logging.StreamHandler(sys.stdout))
 
 # ===========
 
@@ -67,6 +65,7 @@ start = time.perf_counter()
 im = Infomap()
 delimiter = get_delimiter(edgelist_fn)
 with open(edgelist_fn) as f:
+    f.readline()  # skip header
     for line in f:
         u, v = line.split(sep=delimiter)
         im.add_link(int(u), int(v))
@@ -94,10 +93,11 @@ for node in im.tree:
             cluster_dict[node.module_id] = []
         cluster_dict[node.module_id].append(node.node_id)
 
-with open(output_dir / "com.tsv", "w") as f:
+with open(output_file, "w") as f:
+    f.write(f"node_id{delimiter}cluster_id\n")  # write header
     for key in cluster_dict:
         for val in cluster_dict[key]:
-            f.write(f"{val}\t{key}\n")
+            f.write(f"{val}{delimiter}{key}\n")
 
 elapsed = time.perf_counter() - start
 logging.info(f"[TIME] Saving results: {elapsed}")

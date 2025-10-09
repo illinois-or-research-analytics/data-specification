@@ -35,16 +35,16 @@ def run_leiden(
     **input_edgelist_format,
 ):
     # Initialization
-    output_path = Path(output_path)
-    output_path.mkdir(parents=True, exist_ok=True)
+    # output_path = Path(output_path)
+    # output_path.mkdir(parents=True, exist_ok=True)
 
-    logging.basicConfig(
-        filename=output_path / "run.log",
-        filemode="w",
-        level=logging.INFO,
-        format="%(asctime)s - %(levelname)s - %(message)s",
-    )
-    logging.getLogger().addHandler(logging.StreamHandler(sys.stdout))
+    # logging.basicConfig(
+    #     filename=output_path / "run.log",
+    #     filemode="w",
+    #     level=logging.INFO,
+    #     format="%(asctime)s - %(levelname)s - %(message)s",
+    # )
+    # logging.getLogger().addHandler(logging.StreamHandler(sys.stdout))
 
     # Read in leiden
     start = time.perf_counter()
@@ -89,7 +89,7 @@ def run_leiden(
         }
     )
     df2.to_csv(
-        output_path / "com.csv", index=False, sep=",", header=False
+        output_path, index=False, sep=delimiter, header=True
     )  # TODO: file format
 
     elapsed = time.perf_counter() - start

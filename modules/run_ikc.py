@@ -12,20 +12,20 @@ def main(args):
     global quiet
 
     edgelist = args.edgelist
-    output_dir = Path(args.output_directory)
+    output_file = Path(args.output)
     k = args.kvalue
     quiet = args.quiet
 
     # ===========
 
-    output_dir.mkdir(parents=True, exist_ok=True)
-    logging.basicConfig(
-        filename=output_dir / "run.log",
-        filemode="w",
-        level=logging.INFO,
-        format="%(asctime)s - %(levelname)s - %(message)s",
-    )
-    logging.getLogger().addHandler(logging.StreamHandler(sys.stdout))
+    # output_dir.mkdir(parents=True, exist_ok=True)
+    # logging.basicConfig(
+    #     filename=output_dir / "run.log",
+    #     filemode="w",
+    #     level=logging.INFO,
+    #     format="%(asctime)s - %(levelname)s - %(message)s",
+    # )
+    # logging.getLogger().addHandler(logging.StreamHandler(sys.stdout))
 
     # ===========
 
@@ -57,7 +57,7 @@ def main(args):
 
     start = time.perf_counter()
 
-    print_clusters(clusters, output_dir, inverted_node_id_map)
+    print_clusters(clusters, output_file, inverted_node_id_map, delimiter)
 
     elapsed = time.perf_counter() - start
     logging.info(f"[TIME] Saving results: {elapsed}")
@@ -79,7 +79,7 @@ def get_delimiter(filepath: str) -> str:
                 )
 
 
-def print_clusters(clusters, out_dir, inverted_node_id_map):
+def print_clusters(clusters, output_file, inverted_node_id_map, delimiter="\t"):
     """
     This writes a csv containing lines with the:
     node Id, cluster nbr, and value of k for which cluster nbr was generated
@@ -91,8 +91,9 @@ def print_clusters(clusters, out_dir, inverted_node_id_map):
     # the index indicates the order for when the cluster number was generated
     index = 0
     k = 0
-    with open("{}/com.tsv".format(out_dir), "w") as output:
-        csvwriter = csv.writer(output, delimiter="\t", lineterminator="\n")
+    with open(output_file, "w") as output:
+        csvwriter = csv.writer(output, delimiter=delimiter, lineterminator="\n")
+        csvwriter.writerow(["node_id", "cluster_id"])
         for cluster_info in clusters:
             (cluster, k, modularity_score) = cluster_info
 
@@ -369,7 +370,7 @@ def parseArgs():
 
     parser.add_argument(
         "-o",
-        "--output-directory",
+        "--output",
         type=str,
         help="Path to file containing output",
         required=True,
