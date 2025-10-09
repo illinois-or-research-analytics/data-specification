@@ -1,9 +1,14 @@
 import os
 from toolkit import conversion_toolkit
+import time
 
 modules_location = "./modules"
 external_modules_location = "./downloaded_programs"
 toolkit_location = "./toolkit"
+
+
+EDGELIST_HEADER = ["source", "target"]
+CLUSTER_HEADER = ["node_id", "cluster_id"]
 
 
 def _construct_output_path(working_dir, stage_number, method):
@@ -123,9 +128,7 @@ def run_method(
             command
         )
 
-        conversion_toolkit.convert_to(
-            aoc_output, aoc_output, "\t", ["node_id", "cluster_id"]
-        )
+        conversion_toolkit.convert_to(aoc_output, aoc_output, "\t", CLUSTER_HEADER)
 
         # Remove temporary files
         os.remove(aoc_tmp_network)
@@ -133,11 +136,77 @@ def run_method(
 
         return current_network, aoc_output
 
+    # DSC related
+    elif method == "flow-iter" or method == "flow":
+        flow_iter_location = f"{external_modules_location}/{method}"
+        flow_iter_output_cluster = f"{working_dir}/{stage_number}_{method}.csv"
+        flow_iter_output_density = f"{working_dir}/{stage_number}_{method}_density.csv"
+
+        flow_iter_tmp_network = (
+            f"{working_dir}/{stage_number}_{method}.tmp.input.edgelist"
+        )
+
+        # Remove header from input edgelist
+        conversion_toolkit.convert_to(
+            current_network, flow_iter_tmp_network, "\t", False
+        )
+
+        os.system(
+            f"{flow_iter_location} {flow_iter_tmp_network} {flow_iter_output_cluster} {flow_iter_output_density}"
+        )
+
+        # Add header to the output cluster
+        conversion_toolkit.convert_to(
+            flow_iter_output_cluster,
+            flow_iter_output_cluster,
+            "\t",
+            CLUSTER_HEADER,
+        )
+
+        # TODO: for now, leave density unchanged since it is not part of our standard specification
+
+        # Remove temporary files
+        os.remove(flow_iter_tmp_network)
+
+        return current_network, flow_iter_output_cluster
+
+    elif method == "fista-int" or method == "fista-frac":
+        fista_location = f"{external_modules_location}/{method}"
+        fista_output_cluster = f"{working_dir}/{stage_number}_{method}.csv"
+        fista_output_density = f"{working_dir}/{stage_number}_{method}_density.csv"
+
+        fista_tmp_network = f"{working_dir}/{stage_number}_{method}.tmp.input.edgelist"
+
+        # Remove header from input edgelist
+        conversion_toolkit.convert_to(current_network, fista_tmp_network, "\t", False)
+
+        # Argument
+        command = f"{fista_location} {fista_tmp_network} {fista_output_cluster} {fista_output_density}"
+        if "niters" in method_params:
+            command = f"{command} -niters {method_params['niters']}"
+
+        os.system(command)
+
+        # Add header to the output cluster
+        conversion_toolkit.convert_to(
+            fista_output_cluster,
+            fista_output_cluster,
+            "\t",
+            CLUSTER_HEADER,
+        )
+
+        # TODO: for now, leave density unchanged since it is not part of our standard specification
+
+        # Remove temporary files
+        os.remove(fista_tmp_network)
+
+        return current_network, fista_output_cluster
+
 
 """ Step 1: specify input network, working directory, and final output clustering name"""
 input_network = "./inputs/network.csv"  # user to replace with custom input network
-working_dir = "./outputs/working_dir"  # user to specify where to put intermediate stage output files
-final_clustering = "./outputs/final_clustering.csv"
+working_dir = f"./outputs/working_dir-{time.time()}"  # user to specify where to put intermediate stage output files
+final_clustering = f"{working_dir}/final_clustering.csv"
 
 os.makedirs(working_dir, exist_ok=True)
 
@@ -153,6 +222,7 @@ os.makedirs(working_dir, exist_ok=True)
         wcc
         cc
         aoc
+        dsc (flow, flow-iter, fista, fista-iter)
         TO BE EXPANDED
 """
 
@@ -161,15 +231,16 @@ method_arr = {
     # "ikc": {
     #     "k": 2,
     # },
-    "infomap": {},
-    # "leiden-cpm": {
-    #     "res": 0.1,
+    # "infomap": {},
+    # # "leiden-cpm": {
+    # #     "res": 0.1,
+    # # },
+    # # "aoc": {
+    # #     "m": "k2",
+    # # },
+    # "wcc": {
+    #     "threshold": "1log10",  # c, xlog_y(n)
     # },
-    # "aoc": {
-    #     "m": "k2",
-    # },
-    "wcc": {
-        "threshold": "1log10",  # c, xlog_y(n)
-    },
+    "flow-iter": {}
 }
 run_pipeline(input_network, working_dir, final_clustering, method_arr)
