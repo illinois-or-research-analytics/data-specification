@@ -2,18 +2,24 @@ import os
 from toolkit import conversion_toolkit
 from toolkit.conversion_toolkit import FileType
 import time
+import json
+import argparse
 
-modules_location = "./modules"
-external_modules_location = "./downloaded_programs"
-toolkit_location = "./toolkit"
-
-
-EDGELIST_HEADER = ["source", "target"]
-CLUSTER_HEADER = ["node_id", "cluster_id"]
+modules_location = os.path.abspath("./modules")
+external_modules_location = os.path.abspath("./downloaded_programs")
+toolkit_location = os.path.abspath("./toolkit")
 
 
 def _construct_output_path(working_dir, stage_number, method):
     return f"{working_dir}/{stage_number}_{method}.csv"
+
+
+def _stage_output_path(
+    working_dir,
+    stage_number,
+    method,
+):
+    return f"{working_dir}/{stage_number}_{method}"
 
 
 def run_pipeline(input_network, working_dir, final_clustering, method_arr):
@@ -56,7 +62,8 @@ def run_method(
 
     if method == "leiden-mod":
         leiden_location = f"{modules_location}/run_leiden.py"
-        leiden_output = f"{working_dir}/{stage_number}_{method}.csv"
+        stage_output = _stage_output_path(working_dir, stage_number, method)
+        leiden_output = f"{stage_output}.csv"
         os.system(
             f"python {leiden_location} --edgelist {current_network} --output {leiden_output} --model mod"
         )
@@ -64,7 +71,8 @@ def run_method(
 
     elif method == "leiden-cpm":
         leiden_location = f"{modules_location}/run_leiden.py"
-        leiden_output = f"{working_dir}/{stage_number}_{method}.csv"
+        stage_output = _stage_output_path(working_dir, stage_number, method)
+        leiden_output = f"{stage_output}.csv"
         os.system(
             f"python {leiden_location} --edgelist {current_network} --output {leiden_output} --model cpm --resolution {method_params['res']}"
         )
@@ -72,7 +80,8 @@ def run_method(
 
     elif method == "ikc":
         ikc_location = f"{modules_location}/run_ikc.py"
-        ikc_output = f"{working_dir}/{stage_number}_{method}.csv"
+        stage_output = _stage_output_path(working_dir, stage_number, method)
+        ikc_output = f"{stage_output}.csv"
         command = (
             f"python {ikc_location} --edgelist {current_network} --output {ikc_output}"
         )
@@ -85,7 +94,8 @@ def run_method(
 
     elif method == "infomap":
         infomap_location = f"{modules_location}/run_infomap.py"
-        infomap_output = f"{working_dir}/{stage_number}_{method}.csv"
+        stage_output = _stage_output_path(working_dir, stage_number, method)
+        infomap_output = f"{stage_output}.csv"
         os.system(
             f"python {infomap_location} --edgelist {current_network} --output {infomap_output}"
         )
@@ -93,27 +103,30 @@ def run_method(
 
     elif method == "wcc":
         wcc_location = f"{external_modules_location}/constrained_clustering"
-        wcc_output = f"{working_dir}/{stage_number}_{method}.csv"
+        stage_output = _stage_output_path(working_dir, stage_number, method)
+        wcc_output = f"{stage_output}.csv"
         os.system(
-            f"{wcc_location} MincutOnly --edgelist {current_network} --existing-clustering {current_clustering} --output-file {wcc_output} --num-processors 1 --log-file {working_dir}/{stage_number}.log --connectedness-criterion 1 --log-level 1"
+            f"{wcc_location} MincutOnly --edgelist {current_network} --existing-clustering {current_clustering} --output-file {wcc_output} --num-processors 1 --log-file {stage_output}.log --connectedness-criterion 1 --log-level 1"
         )
         return current_network, wcc_output
 
     elif method == "cc":
         cc_location = f"{external_modules_location}/constrained_clustering"
-        cc_output = f"{working_dir}/{stage_number}_{method}.csv"
+        stage_output = _stage_output_path(working_dir, stage_number, method)
+        cc_output = f"{stage_output}.csv"
         os.system(
-            f"{cc_location} MincutOnly --edgelist {current_network} --existing-clustering {current_clustering} --output-file {cc_output} --num-processors 1 --log-file {working_dir}/{stage_number}.log --connectedness-criterion 0 --log-level 1"
+            f"{cc_location} MincutOnly --edgelist {current_network} --existing-clustering {current_clustering} --output-file {cc_output} --num-processors 1 --log-file {stage_output}.log --connectedness-criterion 0 --log-level 1"
         )
         return current_network, cc_output
 
     # TODO: AOC should only be called when there is IKC in the previous stage
     elif method == "aoc":
         # aoc_location = f"{external_modules_location}/aoc"
-        aoc_output = _construct_output_path(working_dir, stage_number, method)
+        stage_output = _stage_output_path(working_dir, stage_number, method)
+        aoc_output = f"{stage_output}.csv"
 
-        aoc_tmp_network = f"{aoc_output}.tmp.edgelist"
-        aoc_tmp_cluster = f"{aoc_output}.tmp.clustering"
+        aoc_tmp_network = f"{stage_output}.tmp.edgelist"
+        aoc_tmp_cluster = f"{stage_output}.tmp.clustering"
 
         # Need to convert input files
         conversion_toolkit.convert_to(current_network, aoc_tmp_network, " ", False)
@@ -123,6 +136,8 @@ def run_method(
         command = f"aocluster augment -g {aoc_tmp_network} -c {aoc_tmp_cluster} --candidates all -o {aoc_output} -a 0"
         if "m" in method_params:
             command = f"{command} -m {method_params['m']}"
+        else:
+            raise ValueError(f"pipeline stage {stage_number}: m is required for AOC")
 
         os.system(
             # f"aocluster augment -g {aoc_tmp_network} -c {aoc_tmp_cluster} -m k{2} --candidates all --legacy-cid-nid-order --strategy legacy -o {aoc_output} -a 0"
@@ -142,12 +157,11 @@ def run_method(
     # DSC related
     elif method == "flow-iter" or method == "flow":
         flow_iter_location = f"{external_modules_location}/{method}"
-        flow_iter_output_cluster = f"{working_dir}/{stage_number}_{method}.csv"
-        flow_iter_output_density = f"{working_dir}/{stage_number}_{method}_density.csv"
+        stage_output = _stage_output_path(working_dir, stage_number, method)
+        flow_iter_output_cluster = f"{stage_output}.csv"
+        flow_iter_output_density = f"{stage_output}.density.csv"
 
-        flow_iter_tmp_network = (
-            f"{working_dir}/{stage_number}_{method}.tmp.input.edgelist"
-        )
+        flow_iter_tmp_network = f"{stage_output}.tmp.input.edgelist"
 
         # Remove header from input edgelist
         conversion_toolkit.convert_to(
@@ -159,11 +173,8 @@ def run_method(
         )
 
         # Add header to the output cluster
-        conversion_toolkit.convert_to(
-            flow_iter_output_cluster,
-            flow_iter_output_cluster,
-            ",",
-            CLUSTER_HEADER,
+        conversion_toolkit.convert_to_canonical(
+            flow_iter_output_cluster, flow_iter_output_cluster, FileType.CLUSTER
         )
 
         # TODO: for now, leave density unchanged since it is not part of our standard specification
@@ -175,10 +186,11 @@ def run_method(
 
     elif method == "fista-int" or method == "fista-frac":
         fista_location = f"{external_modules_location}/{method}"
-        fista_output_cluster = f"{working_dir}/{stage_number}_{method}.csv"
-        fista_output_density = f"{working_dir}/{stage_number}_{method}_density.csv"
+        stage_output = _stage_output_path(working_dir, stage_number, method)
+        fista_output_cluster = f"{stage_output}.csv"
+        fista_output_density = f"{stage_output}.density.csv"
 
-        fista_tmp_network = f"{working_dir}/{stage_number}_{method}.tmp.input.edgelist"
+        fista_tmp_network = f"{stage_output}.tmp.input.edgelist"
 
         # Remove header from input edgelist
         conversion_toolkit.convert_to(current_network, fista_tmp_network, "\t", False)
@@ -205,13 +217,10 @@ def run_method(
     # CM related
     elif method == "cm":
         cm_directory = f"{external_modules_location}/cm_pipeline/"
-        cm_output_cluster = os.path.abspath(
-            f"{working_dir}/{stage_number}_{method}.csv"
-        )
+        stage_output = _stage_output_path(working_dir, stage_number, method)
+        cm_output_cluster = os.path.abspath(f"{stage_output}.csv")
 
-        cm_tmp_network = os.path.abspath(
-            f"{working_dir}/{stage_number}_{method}.tmp.input.edgelist"
-        )
+        cm_tmp_network = os.path.abspath(f"{stage_output}.tmp.input.edgelist")
 
         # Remove header from input edgelist
         conversion_toolkit.convert_to(current_network, cm_tmp_network, "\t", False)
@@ -232,7 +241,9 @@ def run_method(
             clusterer = method_params["clusterer"]
             command = f"{command} --clusterer {clusterer}"
         else:
-            raise ValueError("Clusterer is required for CM")
+            raise ValueError(
+                f"pipeline stage {stage_number}: clusterer is required for CM"
+            )
 
         if "quiet" in method_params:
             command = f"{command} --quiet"
@@ -272,18 +283,23 @@ def run_method(
 
         return current_network, cm_output_cluster
 
-    elif method == "cm-pipeline":
-        cm_location = f"{external_modules_location}/run_cm_pipeline.py"
-        pass
+    # elif method == "cm-pipeline":
+    #     cm_location = f"{external_modules_location}/run_cm_pipeline.py"
+    #     pass
+
+
+# TODO: this should be expanded to check for more dependencies
+def check_dependencies(stages: dict):
+    # aoc should only work with ikc
+    if "aoc" in stages:
+        if "ikc" not in stages:
+            raise ValueError(f"AOC requires IKC in the previous stage")
+        else:
+            if "m" not in stages["aoc"]:
+                stages["aoc"]["m"] = f"k{stages['ikc']['k']}"
 
 
 """ Step 1: specify input network, working directory, and final output clustering name"""
-input_network = "./inputs/network.csv"  # user to replace with custom input network
-working_dir = f"./outputs/working_dir-{time.time()}"  # user to specify where to put intermediate stage output files
-final_clustering = f"{working_dir}/final_clustering.csv"
-
-os.makedirs(working_dir, exist_ok=True)
-
 """ Step 2: specify the methods, their parameters, and their order
     List of possible method names for any stage that starts with an input network only:
         leiden-cpm (needs parameter called "res" for the resolution value)
@@ -295,10 +311,9 @@ os.makedirs(working_dir, exist_ok=True)
     List of possible method names for any stage that starts with an input network and input clustering:
         wcc
         cc
-        aoc
+        aoc (ikc-only)
         dsc (flow, flow-iter, fista, fista-iter)
         cm
-        cm-pipeline
         TO BE EXPANDED
 """
 
@@ -319,4 +334,57 @@ method_arr = {
     # },
     "cm": {"clusterer": "leiden", "resolution": 0.01}
 }
-run_pipeline(input_network, working_dir, final_clustering, method_arr)
+
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser()
+
+    parser.add_argument("input_pipeline", type=str, help="Input pipeline file")
+    parser.add_argument("input_network", type=str, help="Input network edgelist")
+    parser.add_argument(
+        "-w",
+        "--working-dir",
+        type=str,
+        required=False,
+        default=None,
+        help="Path to the working dir",
+    )
+    parser.add_argument(
+        "-o",
+        "--output-file",
+        type=str,
+        required=False,
+        default=None,
+        help="Path to the final output clustering file",
+    )
+
+    args = parser.parse_args()
+
+    # Argument processing
+    input_pipeline = os.path.abspath(args.input_pipeline)
+    input_network = os.path.abspath(args.input_network)
+
+    if args.working_dir is None:
+        working_dir = f"./outputs/working_dir-{time.time()}"
+    else:
+        working_dir = args.working_dir
+    working_dir = os.path.abspath(working_dir)
+
+    if args.output_file is None:
+        output_file = f"{working_dir}/final_clustering.csv"
+    else:
+        output_file = args.output_file
+    output_file = os.path.abspath(output_file)
+
+    # Setup
+    os.makedirs(working_dir, exist_ok=True)
+
+    # Read in pipeline
+    with open(input_pipeline, "r") as pipeline:
+        method_arr = json.load(pipeline)
+
+    # Check dependencies
+    check_dependencies(method_arr)
+
+    # Run pipeline
+    run_pipeline(input_network, working_dir, output_file, method_arr)
