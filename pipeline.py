@@ -236,9 +236,15 @@ def run_method(
         cm_output_cluster = os.path.abspath(f"{stage_output}.csv")
 
         cm_tmp_network = os.path.abspath(f"{stage_output}.tmp.input.edgelist")
+        if current_clustering is not None:
+            cm_tmp_cluster = os.path.abspath(f"{stage_output}.tmp.input.cluster")
 
-        # Remove header from input edgelist
+        # Remove header from input edgelist (& cluster if available)
         conversion_toolkit.convert_to(current_network, cm_tmp_network, "\t", False)
+        if current_clustering is not None:
+            conversion_toolkit.convert_to(
+                current_clustering, cm_tmp_cluster, "\t", False
+            )
 
         current_directory = os.getcwd()
         os.chdir(cm_directory)
@@ -247,6 +253,9 @@ def run_method(
         command = (
             f"python -m hm01.cm --input {cm_tmp_network} --output {cm_output_cluster}"
         )
+
+        if current_clustering is not None:
+            command = f"{command} --existing-clustering {cm_tmp_cluster}"
 
         if "resolution" in method_params:
             resolution = method_params["resolution"]
@@ -295,6 +304,8 @@ def run_method(
 
         # Remove temporary files
         os.remove(cm_tmp_network)
+        if current_clustering is not None:
+            os.remove(cm_tmp_cluster)
 
         return current_network, cm_output_cluster
 
