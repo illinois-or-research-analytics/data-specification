@@ -1,0 +1,8 @@
+{
+    "leiden-cpm": {
+        "res": 0.01
+    },
+    "cc": {
+        "threshold": "1log10"
+    }
+}

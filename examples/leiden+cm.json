@@ -1,0 +1,6 @@
+{
+    "leiden-cpm": {
+      "res": 0.01
+    },
+    "cm": {"clusterer": "leiden", "resolution": 0.01}
+}

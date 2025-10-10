@@ -1,0 +1,13 @@
+{
+    "ikc": {
+        "k": 2
+    },
+    "wcc": {
+        "threshold": "1log10"
+    },
+    "cc": {
+        "threshold": "1log10"
+    },
+    "aoc": {
+    }
+}
