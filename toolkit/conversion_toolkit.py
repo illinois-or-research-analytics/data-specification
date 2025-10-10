@@ -2,6 +2,14 @@ import argparse
 import pandas as pd
 from pathlib import Path
 import csv
+from enum import Enum
+
+
+# Filetype defined in the spec
+class FileType(Enum):
+    NODELIST = 1
+    EDGELIST = 2
+    CLUSTER = 3
 
 
 def get_delimiter(filepath: str) -> str:
@@ -40,6 +48,16 @@ def convert_to(input, output, tar_delimiter, tar_header):
         output, index=False, sep=tar_delimiter, header=tar_header
     )
     print(f"Conversion completed")
+
+
+# TODO: for now this assumes the file is "mostly correct."
+def convert_to_canonical(input, output, filetype: FileType):
+    if filetype == FileType.NODELIST:
+        convert_to(input, output, ",", ["node_id"])
+    elif filetype == FileType.EDGELIST:
+        convert_to(input, output, ",", ["source", "target"])
+    elif filetype == FileType.CLUSTER:
+        convert_to(input, output, ",", ["node_id", "cluster_id"])
 
 
 def check_header(filename, delimiter):

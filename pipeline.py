@@ -1,5 +1,6 @@
 import os
 from toolkit import conversion_toolkit
+from toolkit.conversion_toolkit import FileType
 import time
 
 modules_location = "./modules"
@@ -128,7 +129,9 @@ def run_method(
             command
         )
 
-        conversion_toolkit.convert_to(aoc_output, aoc_output, "\t", CLUSTER_HEADER)
+        conversion_toolkit.convert_to_canonical(
+            aoc_output, aoc_output, FileType.CLUSTER
+        )
 
         # Remove temporary files
         os.remove(aoc_tmp_network)
@@ -159,7 +162,7 @@ def run_method(
         conversion_toolkit.convert_to(
             flow_iter_output_cluster,
             flow_iter_output_cluster,
-            "\t",
+            ",",
             CLUSTER_HEADER,
         )
 
@@ -188,11 +191,8 @@ def run_method(
         os.system(command)
 
         # Add header to the output cluster
-        conversion_toolkit.convert_to(
-            fista_output_cluster,
-            fista_output_cluster,
-            "\t",
-            CLUSTER_HEADER,
+        conversion_toolkit.convert_to_canonical(
+            fista_output_cluster, fista_output_cluster, FileType.CLUSTER
         )
 
         # TODO: for now, leave density unchanged since it is not part of our standard specification
@@ -201,6 +201,80 @@ def run_method(
         os.remove(fista_tmp_network)
 
         return current_network, fista_output_cluster
+
+    # CM related
+    elif method == "cm":
+        cm_directory = f"{external_modules_location}/cm_pipeline/"
+        cm_output_cluster = os.path.abspath(
+            f"{working_dir}/{stage_number}_{method}.csv"
+        )
+
+        cm_tmp_network = os.path.abspath(
+            f"{working_dir}/{stage_number}_{method}.tmp.input.edgelist"
+        )
+
+        # Remove header from input edgelist
+        conversion_toolkit.convert_to(current_network, cm_tmp_network, "\t", False)
+
+        current_directory = os.getcwd()
+        os.chdir(cm_directory)
+
+        # Arguments
+        command = (
+            f"python -m hm01.cm --input {cm_tmp_network} --output {cm_output_cluster}"
+        )
+
+        if "resolution" in method_params:
+            resolution = method_params["resolution"]
+            command = f"{command} --resolution {resolution}"
+
+        if "clusterer" in method_params:
+            clusterer = method_params["clusterer"]
+            command = f"{command} --clusterer {clusterer}"
+        else:
+            raise ValueError("Clusterer is required for CM")
+
+        if "quiet" in method_params:
+            command = f"{command} --quiet"
+        if "no-prune" in method_params:
+            command = f"{command} --no-prune"
+        if "k" in method_params:
+            k = method_params["k"]
+            command = f"{command} --k {k}"
+        if "threshold" in method_params:
+            threshold = method_params["threshold"]
+            command = f"{command} --threshold {threshold}"
+        if "nprocs" in method_params:
+            nprocs = method_params["nprocs"]
+            command = f"{command} --nprocs {nprocs}"
+        if "clusterer_file" in method_params:
+            clusterer_file = method_params["clusterer_file"]
+            command = f"{command} --clusterer_file {clusterer_file}"
+        if "clusterer_args" in method_params:
+            clusterer_args = method_params["clusterer_args"]
+            command = f"{command} --clusterer_args {clusterer_args}"
+        if "existing-clustering" in method_params:
+            existing_clustering = method_params["existing-clustering"]
+            command = f"{command} --existing-clustering {existing_clustering}"
+
+        os.system(command)
+        print(command)
+
+        os.chdir(current_directory)
+
+        # Add header to the output cluster
+        conversion_toolkit.convert_to_canonical(
+            cm_output_cluster, cm_output_cluster, FileType.CLUSTER
+        )
+
+        # Remove temporary files
+        os.remove(cm_tmp_network)
+
+        return current_network, cm_output_cluster
+
+    elif method == "cm-pipeline":
+        cm_location = f"{external_modules_location}/run_cm_pipeline.py"
+        pass
 
 
 """ Step 1: specify input network, working directory, and final output clustering name"""
@@ -223,6 +297,8 @@ os.makedirs(working_dir, exist_ok=True)
         cc
         aoc
         dsc (flow, flow-iter, fista, fista-iter)
+        cm
+        cm-pipeline
         TO BE EXPANDED
 """
 
@@ -241,6 +317,6 @@ method_arr = {
     # "wcc": {
     #     "threshold": "1log10",  # c, xlog_y(n)
     # },
-    "flow-iter": {}
+    "cm": {"clusterer": "leiden", "resolution": 0.01}
 }
 run_pipeline(input_network, working_dir, final_clustering, method_arr)
