@@ -10,10 +10,6 @@ external_modules_location = os.path.abspath("./downloaded_programs")
 toolkit_location = os.path.abspath("./toolkit")
 
 
-def _construct_output_path(working_dir, stage_number, method):
-    return f"{working_dir}/{stage_number}_{method}.csv"
-
-
 def _stage_output_path(
     working_dir,
     stage_number,
@@ -29,7 +25,7 @@ def run_pipeline(input_network, working_dir, final_clustering, method_arr):
     previous_stage_network = input_network
     previous_stage_clustering = None
     for stage_number, method in enumerate(method_arr):
-        print(f"> Stage {stage_number} started.")
+        print(f"> Stage {stage_number + 1} started.")
 
         previous_stage_network, previous_stage_clustering = run_method(
             method=method,
@@ -37,10 +33,10 @@ def run_pipeline(input_network, working_dir, final_clustering, method_arr):
             current_network=previous_stage_network,
             current_clustering=previous_stage_clustering,
             working_dir=working_dir,
-            stage_number=stage_number,
+            stage_number=stage_number + 1,
         )
 
-        print(f"> Stage {stage_number} complete.\n")
+        print(f"> Stage {stage_number + 1} complete.\n")
 
     os.system(f"cp {previous_stage_clustering} {final_clustering}")
 
@@ -100,6 +96,25 @@ def run_method(
             f"python {infomap_location} --edgelist {current_network} --output {infomap_output}"
         )
         return current_network, infomap_output
+
+    elif method == "sbm":
+        sbm_location = f"{modules_location}/run_sbm.py"
+        stage_output = _stage_output_path(working_dir, stage_number, method)
+        sbm_output = f"{stage_output}.csv"
+
+        # Argument
+        command = (
+            f"python {sbm_location} --edgelist {current_network} --output {sbm_output}"
+        )
+        if "block_state" in method_params:
+            command = f"{command} -b {method_params['block_state']}"
+        else:
+            raise ValueError(
+                f"pipeline stage {stage_number}: block_state is required for SBM"
+            )
+
+        os.system(command)
+        return current_network, sbm_output
 
     elif method == "wcc":
         wcc_location = f"{external_modules_location}/constrained_clustering"
