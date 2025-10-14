@@ -9,6 +9,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Script for running sbm.")
     parser.add_argument(
         "-i",
+        "--edgelist",
         metavar="edgelist",
         type=str,
         required=True,
@@ -29,7 +30,12 @@ if __name__ == "__main__":
         help="whether to run degree corrected or not",
     )
     parser.add_argument(
-        "-o", metavar="output", type=str, required=True, help="output membership path"
+        "-o",
+        "--output",
+        metavar="output",
+        type=str,
+        required=True,
+        help="output membership path",
     )
 
     args = parser.parse_args()
@@ -37,7 +43,7 @@ if __name__ == "__main__":
     sbm_graph = gt.Graph(directed=False)
 
     def edge_list_iterable():
-        with open(args.i, "r") as f:
+        with open(args.edgelist, "r") as f:
             for i, line in enumerate(f):
                 if i == 0:
                     continue
@@ -65,7 +71,7 @@ if __name__ == "__main__":
     block_membership = sbm_clustering.get_blocks()
 
     cluster_dict = {}
-    with open(args.o, "w") as f:
+    with open(args.output, "w") as f:
         f.write(f"node_id,cluster_id\n")
         for new_node_id in sbm_graph.vertices():
             current_cluster_id = block_membership[new_node_id]
