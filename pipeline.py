@@ -120,9 +120,18 @@ def run_method(
         wcc_location = f"{external_modules_location}/constrained_clustering"
         stage_output = _stage_output_path(working_dir, stage_number, method)
         wcc_output = f"{stage_output}.csv"
-        os.system(
-            f"{wcc_location} MincutOnly --edgelist {current_network} --existing-clustering {current_clustering} --output-file {wcc_output} --num-processors 1 --log-file {stage_output}.log --connectedness-criterion 1 --log-level 1"
-        )
+
+        # Argument
+        command = f"{wcc_location} MincutOnly --edgelist {current_network} --existing-clustering {current_clustering} --output-file {wcc_output} --num-processors 1 --log-file {stage_output}.log --log-level 1"
+
+        if "connectedness-criterion" in method_params:
+            command = f"{command} -b {method_params['criterion']}"
+        else:
+            raise ValueError(
+                f"pipeline stage {stage_number}: criterion is required for WCC"
+            )
+
+        os.system(command)
         return current_network, wcc_output
 
     elif method == "cc":
