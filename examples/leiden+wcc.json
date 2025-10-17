@@ -3,6 +3,6 @@
         "res": 0.01
     },
     "wcc": {
-        "threshold": "1log10"
+        "criterion": "1log_10(n)"
     }
 }

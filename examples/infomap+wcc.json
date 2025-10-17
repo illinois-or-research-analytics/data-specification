@@ -2,6 +2,6 @@
     "infomap": {
     },
     "wcc": {
-        "threshold": "1log10"
+        "criterion": "1log_10(n)"
     }
 }

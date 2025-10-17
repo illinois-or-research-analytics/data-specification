@@ -3,10 +3,9 @@
         "k": 2
     },
     "wcc": {
-        "threshold": "1log10"
+        "criterion": "1log_10(n)"
     },
     "cc": {
-        "threshold": "1log10"
     },
     "aoc": {
     }
