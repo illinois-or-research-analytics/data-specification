@@ -1,5 +1,4 @@
 import csv
-import sys
 import time
 import logging
 import argparse
@@ -15,17 +14,6 @@ def main(args):
     output_file = Path(args.output)
     k = args.kvalue
     quiet = args.quiet
-
-    # ===========
-
-    # output_dir.mkdir(parents=True, exist_ok=True)
-    # logging.basicConfig(
-    #     filename=output_dir / "run.log",
-    #     filemode="w",
-    #     level=logging.INFO,
-    #     format="%(asctime)s - %(levelname)s - %(message)s",
-    # )
-    # logging.getLogger().addHandler(logging.StreamHandler(sys.stdout))
 
     # ===========
 

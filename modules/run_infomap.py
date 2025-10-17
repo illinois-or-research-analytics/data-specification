@@ -1,4 +1,3 @@
-import sys
 import time
 import logging
 import argparse
@@ -47,16 +46,6 @@ def get_delimiter(filepath: str) -> str:
                     "Unsupported delimiter: delimiter must be either comma, tab, or whitespace."
                 )
 
-
-# ===========
-
-# logging.basicConfig(
-#     filename=output_dir / "run.log",
-#     filemode="w",
-#     level=logging.INFO,
-#     format="%(asctime)s - %(levelname)s - %(message)s",
-# )
-# logging.getLogger().addHandler(logging.StreamHandler(sys.stdout))
 
 # ===========
 

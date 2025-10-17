@@ -1,12 +1,9 @@
 import argparse
 import leidenalg as la
 import igraph as ig
-from pathlib import Path
 import logging
-import sys
 import time
 import pandas as pd
-import os
 
 
 def get_delimiter(filepath: str) -> str:
@@ -32,20 +29,7 @@ def run_leiden(
     resolution=None,
     n_iters=2,
     seed=1234,
-    **input_edgelist_format,
 ):
-    # Initialization
-    # output_path = Path(output_path)
-    # output_path.mkdir(parents=True, exist_ok=True)
-
-    # logging.basicConfig(
-    #     filename=output_path / "run.log",
-    #     filemode="w",
-    #     level=logging.INFO,
-    #     format="%(asctime)s - %(levelname)s - %(message)s",
-    # )
-    # logging.getLogger().addHandler(logging.StreamHandler(sys.stdout))
-
     # Read in leiden
     start = time.perf_counter()
 

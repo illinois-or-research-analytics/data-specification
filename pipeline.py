@@ -41,6 +41,7 @@ def run_pipeline(input_network, working_dir, final_clustering, method_arr):
     os.system(f"cp {previous_stage_clustering} {final_clustering}")
 
 
+# TODO: move this to independent modules for maintenance
 def run_method(
     method,
     method_params,
@@ -60,6 +61,9 @@ def run_method(
         leiden_location = f"{modules_location}/run_leiden.py"
         stage_output = _stage_output_path(working_dir, stage_number, method)
         leiden_output = f"{stage_output}.csv"
+
+        # TODO: n-iters
+
         os.system(
             f"python {leiden_location} --edgelist {current_network} --output {leiden_output} --model mod"
         )
@@ -69,6 +73,9 @@ def run_method(
         leiden_location = f"{modules_location}/run_leiden.py"
         stage_output = _stage_output_path(working_dir, stage_number, method)
         leiden_output = f"{stage_output}.csv"
+
+        # TODO: n-iters
+
         os.system(
             f"python {leiden_location} --edgelist {current_network} --output {leiden_output} --model cpm --resolution {method_params['res']}"
         )
@@ -113,6 +120,8 @@ def run_method(
                 f"pipeline stage {stage_number}: block_state is required for SBM"
             )
 
+        # TODO: degree-corrected
+
         os.system(command)
         return current_network, sbm_output
 
@@ -125,7 +134,9 @@ def run_method(
         command = f"{wcc_location} MincutOnly --edgelist {current_network} --existing-clustering {current_clustering} --output-file {wcc_output} --num-processors 1 --log-file {stage_output}.log --log-level 1"
 
         if "criterion" in method_params:
-            command = f"{command} -b {method_params['criterion']}"
+            command = (
+                f"{command} --connectedness-criterion \"{method_params['criterion']}\""
+            )
         else:
             raise ValueError(
                 f"pipeline stage {stage_number}: criterion is required for WCC"
