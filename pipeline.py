@@ -124,7 +124,7 @@ def run_method(
         # Argument
         command = f"{wcc_location} MincutOnly --edgelist {current_network} --existing-clustering {current_clustering} --output-file {wcc_output} --num-processors 1 --log-file {stage_output}.log --log-level 1"
 
-        if "connectedness-criterion" in method_params:
+        if "criterion" in method_params:
             command = f"{command} -b {method_params['criterion']}"
         else:
             raise ValueError(
