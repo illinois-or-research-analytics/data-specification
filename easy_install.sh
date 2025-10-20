@@ -17,13 +17,25 @@ cd ..
 cp DSC/bin/* ./
 
 # CC, WCC
-cd constrained-clustering
-./setup.sh
-./easy_build_and_compile.sh
-cp constrained_clustering ../
-cd ..
+# Check if constrained_clustering is already built
+if [ -f constrained_clustering ]; then
+    echo "constrained_clustering is already built. Skipping build."
+else
+    echo "constrained_clustering is not built. Building..."
+    cd constrained-clustering
+    ./setup.sh
+    ./easy_build_and_compile.sh
+    cp constrained_clustering ../
+    cd ..
+fi
 
 # AOC
+# Check if cargo is installed
+if ! command -v cargo &> /dev/null; then
+    echo "cargo could not be found. Please install rust and cargo."
+    exit 1
+fi
+
 cd aocv2_rs
 cargo build --release
 cargo install --path .
