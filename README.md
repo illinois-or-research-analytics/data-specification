@@ -26,4 +26,33 @@ The [scripts](scripts/) directory contains utilities for working with the data f
   - `get_delimiter.py` (Python implementation)
   - `get_delimiter.cpp` (C++ implementation)
 
-These utilities help standardize file processing across different programming languages.
+## Installation
+We use pixi to manage dependencies. To install all dependencies, run the following command:
+```bash
+pixi install
+```
+
+To activate the shell, run the following command:
+```bash
+pixi shell
+```
+
+### External Modules
+The pipeline requires several external modules to function. To setup these external modules, run the following command:
+```bash
+bash easy_install.sh
+```
+
+This will install the external modules in the `downloaded_programs` directory and will only need to be run once. The external modules include:
+- [CC](https://github.com/MinhyukPark/constrained-clustering)
+- [CM++](https://github.com/illinois-or-research-analytics/cm_pipeline)
+- [DSC](https://github.com/illinois-or-research-analytics/DSC)
+- [AOC](https://github.com/illinois-or-research-analytics/aocv2_rs)
+
+## Testing
+To test the pipeline with the example datasets, run the following command:
+```bash
+bash test.sh
+```
+
+This will run the pipeline with the example datasets and save the results in the `test-script-out` directory.
